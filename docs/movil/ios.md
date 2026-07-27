@@ -392,6 +392,68 @@ Interceptor.attach(Module.findExportByName("IOSSecuritySuite", "$s16IOSSecurityS
 });
 ```
 
+Updated for **Frida 17**:
+
+```js
+// flutter-jb-bypass-ios.js - Corregido para Frida 17+
+console.log("=== IOSSecuritySuite Bypass ===");
+
+try {
+    // Obtener el módulo IOSSecuritySuite
+    var iosSecurityModule = Process.getModuleByName("IOSSecuritySuite");
+    console.log("Módulo IOSSecuritySuite encontrado en: " + iosSecurityModule.path);
+    
+    // En Frida 17, usar el método del objeto módulo, no Module.findExportByName
+    var targetFunction = iosSecurityModule.getExportByName("$s16IOSSecuritySuiteAAC13amIJailbrokenSbyFZ");
+    
+    if (targetFunction !== null) {
+        console.log("Target encontrado: " + targetFunction);
+        
+        Interceptor.attach(targetFunction, {
+          onEnter: function(args) {
+            console.log("JB check llamado");
+          },
+          onLeave: function(retval) {
+            console.log("Bypasseando JB check, retorno: " + retval);
+            retval.replace(0x0);
+          }
+        });
+    } else {
+        console.error("No se encontró el símbolo específico");
+        
+        // Listar todos los exports que contengan "jail" o "Jailbroken"
+        console.log("=== Buscando símbolos alternativos ===");
+        Module.enumerateExports("IOSSecuritySuite").forEach(exp => {
+            var name = exp.name;
+            if (name.toLowerCase().includes("jail")) {
+                console.log("Encontrado: " + name + " @ " + exp.address);
+                
+                // Hookear automáticamente
+                Interceptor.attach(exp.address, {
+                    onEnter: function(args) {
+                        console.log("JB Check llamado: " + name);
+                    },
+                    onLeave: function(retval) {
+                        retval.replace(0x0);
+                    }
+                });
+            }
+        });
+    }
+    
+} catch (error) {
+    console.error("Error: " + error.message);
+    console.log("Error. Módulos cargados:");
+    Process.enumerateModules().forEach(m => {
+        if (m.name.toLowerCase().includes("security") || 
+            m.name.toLowerCase().includes("jail") ||
+            m.name.toLowerCase().includes("flutter")) {
+            console.log("  - " + m.name + " @ " + m.base);
+        }
+    });
+}
+```
+
 ### SSL pinning detection
 
 Since Flutter uses DART and is not using system proxy, we need to route our traffic to our burp with the help of a vpn.
