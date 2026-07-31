@@ -235,6 +235,18 @@ sudo dpkg -i ai.akemi.appsyncunified_113.0_iphoneos-arm64.deb
 
 ## IPA extractor and decryption
 
+### AppDump3
+
+`AppDump3` is a good way to decrypt and extract an IPA.
+
+Install it on the device:
+
+```
+mv AppDump3.tipa AppDump3.ipa
+```
+
+* [https://github.com/qbap/ONEJailbreak/blob/main/AppsDump3.tipa](https://github.com/qbap/ONEJailbreak/blob/main/AppsDump3.tipa)
+
 ### Frida-ios-dump
 
 We can extract the IPA from an installed application from APP Store.
@@ -394,6 +406,8 @@ Interceptor.attach(Module.findExportByName("IOSSecuritySuite", "$s16IOSSecurityS
 
 Updated for **Frida 17**:
 
+> **Note**: Try to use frida server 16.5.9. Frida 17 is unestable with iOS 16. [https://github.com/frida/frida/releases/tag/16.5.9](https://github.com/frida/frida/releases/tag/16.5.9)
+
 ```js
 // flutter-jb-bypass-ios.js - Corregido para Frida 17+
 console.log("=== IOSSecuritySuite Bypass ===");
@@ -480,7 +494,7 @@ DNS server [1]: 1
 Name [client]: flutter_pentest
 ```
 
-The `fullter_pentest.ovpn` will be created on the actual folder, we just need to send it to our iphone via ssh or http.
+The `flutter_pentest.ovpn` will be created on the actual folder, we just need to send it to our iphone via ssh or http.
 
 Install `OpenVpn` client on iPhone and import the configuration file.
 
@@ -681,6 +695,17 @@ function hook_ssl_verify_peer_cert(address) {
 ```
 
 ## Static Analysis
+
+### MobsF
+
+First we need to dump a decrypted IPA.
+
+```
+docker pull opensecurity/mobile-security-framework-mobsf:latest
+docker run -it --rm -p 8000:8000 opensecurity/mobile-security-framework-mobsf:latest
+
+# Default username and password: mobsf/mobsf
+```
 
 ### Binary Analysis
 
